@@ -42,13 +42,12 @@ export default function IngredientInput() {
           className="h-16 pl-6 pr-28 rounded-2xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all text-lg shadow-inner bg-white/80"
         />
         
-        {/* action square with enter written on top of it */}
+        {/* action square */}
         <div className="absolute right-2 top-2 bottom-2 p-1">
           <button 
             onClick={addIngredient}
             className="h-full px-3 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-0.5 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm active:scale-95 group/btn"
           >
-            <span className="text-[9px] font-black tracking-tighter opacity-70 group-hover/btn:opacity-100">ENTER</span>
             <CornerDownLeft className="h-4 w-4 stroke-[2.5px]" />
           </button>
         </div>

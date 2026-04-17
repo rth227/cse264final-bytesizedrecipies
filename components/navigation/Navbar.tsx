@@ -17,7 +17,6 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Browse', href: '/', style: 'standard' },
     { name: 'My Cookbooks', href: '/cookbooks', style: 'serif' },
-    { name: 'Community', href: '/community', style: 'standard' },
   ];
 
   return (

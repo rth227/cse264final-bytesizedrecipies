@@ -15,9 +15,20 @@ app.use(cors())
 
 // base route
 app.get('/', (_req, res) => {
-    res.send("Welcome to the Shopping API!!!")
+    res.send("Welcome to Byte Sized Recipes!!!")
 })
 
 app.get('/up', (_req, res) => {
   res.json({status: 'up'})
+})
+
+/* RECIPES ------------------------------------------------ */
+
+
+/* FAVORITES ------------------------------------------------ */
+
+/* COOKBOOKS ------------------------------------------------ */
+
+app.listen(app.get('port'), () =>{
+  console.log('Server running at http://localhost:%d', app.get('port'))
 })

@@ -24,6 +24,56 @@ app.get('/up', (_req, res) => {
 
 /* USERS -------------------------------------------------- */
 
+/* route POST api/auth/signup creates a new user (signing up, defaults to free ) */
+app.post('/api/auth/signup', (req, res) => {
+  try {
+    //get content of body
+    let body = req.body
+
+    //validate data before adding it
+    if (!body.name || !body.email || !body.password){
+     return res.status(400).send('Missing required fields')
+    }
+
+    const qs = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`
+    query(qs, [body.name, body.email, body.password]).then(data => res.send(`${data.rowCount} row inserted`))
+
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* route POST api/auth/login cerigies credientaials */
+app.post('/api/auth/signup', (req, res) => {
+  try {
+    //get content of body
+    let body = req.body
+
+    //validate data before adding it
+    if (!body.email || !body.password){
+      return res.status(400).send('Missing required fields')
+    }
+
+    //get the user's  email
+    const result = query(`SELECT * FROM users WHERE email = $1`, [body.email]);
+    const email = result.rows[0];
+
+    //verify user has an account
+    if (!email){
+      return res.status(400).send('User not found')
+    }
+    //ensure correct password
+    if (email.password !== body.password){
+      return res.status(400).send('Invalid password')
+    }
+
+    res.send(email)
+  } catch (error){
+    console.log(error)
+    res.send(error)
+  }
+})
 /* RECIPES ------------------------------------------------ */
 
 /* GET /api/recipes for all recipes */

@@ -53,3 +53,6 @@ environment variables
 
 run the development server 
 npm run dev
+
+# Database
+Contains schema.sql (all of the tables) and seed.sql (sample data for tables). Set up .env.local and then connect to db on DBeaver. Run seed.sql to populate test data.

@@ -227,6 +227,91 @@ app.delete('/api/favorites', (req, res) => {
 
 /* COOKBOOKS ------------------------------------------------ */
 
+/* route GET /api/cookbooks/:userID gets all the cook books for a user */
+app.get('/api/cookbooks/:userId', (req, res) => {
+  try {
+    /* gets all cookbooks from a user */
+    const qs = `SELECT * FROM bytesized_cookbooks WHERE user_id = $1`
+    query(qs, [req.params.userId]).then(data => {res.json(data.rows)})
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* POST route /api/cookbooks creates a new cookbook */
+app.post('/api/cookbooks', async (req, res) => {
+  try {
+    //get content of body
+    let body = req.body
+
+    //validate data before adding it
+    if (!body.user_id || !body.name){
+      return res.status(400).send('Missing required fields')
+    }
+
+    //validate that the user is premium user
+    if (body.user_role === 'free'){
+      return res.status(400).send("Cookbooks are only for premium users")
+    }
+
+    /* create cookbook */
+    const qs = `INSERT INTO bytesized_cookbooks (user_id, name, description ) VALUES ($1, $2, $3)`
+    query(qs, [body.user_id, body.name, body.description]).then((data => res.send(`${data.rowCount} cookbook added`)))
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* GET route /api/cookbooks/:id/recipes gets recipes in a cookbook */
+app.get('/api/cookbooks/:id/recipes', (req, res) => {
+  try {
+    /* gets all recipes in a cookbook by connecting recipe id from favorites and recipes */
+    const qs = `SELECT bytesized_recipes.* FROM bytesized_cookbook_recipes
+                JOIN bytesized_recipes ON bytesized_cookbook_recipes.recipe_id = bytesized_recipes.id
+                WHERE bytesized_cookbook_recipes.cookbook_id = $1`
+    query(qs, [req.params.id]).then(data => {res.json(data.rows)})
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+
+/* POST route /api/cookbooks/:id/recipes adds a recipe to an existing cookbook */
+app.post('/api/cookbooks/:id/recipes', (req, res) => {
+  try {
+    //get content of body
+    let body = req.body
+
+    //validate data before adding it
+    if (!body.recipe_id){
+     return res.status(400).send('Missing required fields')
+    }
+
+    //insert the recipe into the cookbook 
+    const qs = `INSERT INTO bytesized_cookbook_recipes (cookbook_id, recipe_id) VALUES ($1, $2)`
+    query(qs, [req.params.id, body.recipe_id]).then(data => res.send(`${data.rowCount} recipe inserted`))
+
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* route DELETE /api/cookbooks/:id/recipes:recipeId will remove a recipe by an id */
+app.delete('/api/cookbooks/:id/recipes/:recipeId', (req, res) => {
+  try {
+    //delete 
+    const qs = `DELETE FROM bytesized_cookbook_recipes WHERE cookbook_id = $1 AND recipe_id = $2`
+    query(qs, [req.params.id, req.params.recipeId]).then(data => res.send(`${data.rowCount} recipe deleted`))
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
 app.listen(app.get('port'), () =>{
   console.log('Server running at http://localhost:%d', app.get('port'))
 })

@@ -35,7 +35,7 @@ app.post('/api/auth/signup', (req, res) => {
      return res.status(400).send('Missing required fields')
     }
 
-    const qs = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`
+    const qs = `INSERT INTO bytesized_users (name, email, password) VALUES ($1, $2, $3)`
     query(qs, [body.name, body.email, body.password]).then(data => res.send(`${data.rowCount} row inserted`))
 
   } catch (error) {
@@ -56,7 +56,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     //get the user's  email
-    const result = await query(`SELECT * FROM users WHERE email = $1`, [body.email]);
+    const result = await query(`SELECT * FROM bytesized_users WHERE email = $1`, [body.email]);
     const email = result.rows[0];
 
     //verify user has an account
@@ -76,12 +76,12 @@ app.post('/api/auth/login', async (req, res) => {
 })
 
 /* use PUT /api/users/:id/role to update user's status (from free to admin or vise versa) */
-app.patch('/api/users/:id/role', (req, res) => {
+app.put('/api/users/:id/role', (req, res) => {
   //get content of body
   const body = req.body;
 
   //updating field 
-  let qs = `UPDATE users SET role = $1 WHERE id = $2`
+  let qs = `UPDATE bytesized_users SET role = $1 WHERE id = $2`
   query(qs, [body.role, req.params.id] ).then(data => res.send(`${data.rowCount} row inserted`))
 })
 
@@ -163,7 +163,67 @@ app.delete('/api/recipes/:id', (req,res) => {
 })
 
 /* FAVORITES ------------------------------------------------ */
+/* route GET /api/favorites/:userID gets all the favorites for a user */
+app.get('/api/favorites/:userId', (req, res) => {
+  try {
+    /* gets all recipes a user has favorited by connecting recipe id from favorites and recipes */
+    const qs = `SELECT bytesized_recipes.* FROM bytesized_favorites 
+                JOIN bytesized_recipes ON bytesized_favorites.recipe_id = bytesized_recipes.id
+                WHERE bytesized_favorites.user_id = $1`
+    query(qs, [req.params.userId]).then(data => {res.json(data.rows)})
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
 
+/* routes POST /api/favorites/:userID adds a favorite to a user's favorites */
+app.post('/api/favorites', async (req, res) => {
+  try {
+    //get content of body
+    let body = req.body
+
+    //validate data before adding it
+    if (!body.user_id || !body.recipe_id){
+      return res.status(400).send('Missing required fields')
+    }
+
+    /* get number of favorites by counting the count of favorites by user id, and parse it as an int */
+    const num = await query(`SELECT COUNT(*) FROM bytesized_favorites WHERE user_id = $1`, [body.user_id])
+    const count = parseInt(num.rows[0].count)
+    if (count > 4 ) {
+      return res.status(400).send('You can only have 5 favorites')
+    }
+
+    /* add favorites */
+    const qs = `INSERT INTO bytesized_favorites (user_id, recipe_id) VALUES ($1, $2)`
+    query(qs, [body.user_id, body.recipe_id]).then((data => res.send(`${data.rowCount} favorite added`)))
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* route DELETE /api/favorites remove a recipe from favorites */
+app.delete('/api/favorites', (req, res) => {
+  try { 
+    //get content of body
+    let body = req.body
+
+    //validate data before removing it
+     if (!body.user_id || !body.recipe_id){
+      return res.status(400).send('Missing required fields')
+    }
+
+    //delete it 
+    const qs = `DELETE FROM bytesized_favorites WHERE user_id = $1 AND recipe_id = $2`
+    query(qs, [body.user_id, body.recipe_id]).then(data => res.send(`${data.rowCount} favorite removed`))
+
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
 
 /* COOKBOOKS ------------------------------------------------ */
 

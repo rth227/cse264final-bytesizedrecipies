@@ -56,3 +56,15 @@ npm run dev
 
 # Database
 Contains schema.sql (all of the tables) and seed.sql (sample data for tables). Set up .env.local and then connect to db on DBeaver. Run seed.sql to populate test data.
+
+
+Tables are ... users (id, name, password, email, role), recipies (title, ingredients, instructions, meal type, etc), favorites, cookbook, cookbook recipies. 
+
+# Auth Setup
+Make sure that .env.local is made and run 'npm install' and 'npm run dev'. If running locally, go to http://localhost:3000/signup to sign up on platform. 
+
+
+You can make yourself an admin by running 'UPDATE bytesized_users SET role = 'admin' WHERE email = 'your-email@lehigh.edu';' in the DBeaver.
+
+
+Important to note: passwords are hashed for security. Seed data in seed.sql has fake passwords - so they may not work. Session information is stored with cookies rather than in a new table. 

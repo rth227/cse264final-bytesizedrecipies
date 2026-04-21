@@ -24,6 +24,27 @@ app.get('/up', (_req, res) => {
 
 /* RECIPES ------------------------------------------------ */
 
+/* GET /api/recipes for all recipes */
+app.get('/api/recipes', (req, res) => {
+  try {
+    const qs = `SELECT * FROM recipes`
+    query(qs).then(data => {res.json(data.rows)})
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
+
+/* GET /api/recipes/:id for specific recipe by id */
+app.get('/api/recipes/id', (req, res) => {
+  try {
+    const qs = `SELECT * FROM recipes WHERE id = $1`
+    query(qs, [req.params.id]).then(data => {res.json(data.rows)})
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
 
 /* FAVORITES ------------------------------------------------ */
 

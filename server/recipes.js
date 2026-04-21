@@ -45,7 +45,7 @@ app.post('/api/auth/signup', (req, res) => {
 })
 
 /* route POST api/auth/login cerigies credientaials */
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     //get content of body
     let body = req.body
@@ -56,7 +56,7 @@ app.post('/api/auth/signup', (req, res) => {
     }
 
     //get the user's  email
-    const result = query(`SELECT * FROM users WHERE email = $1`, [body.email]);
+    const result = await query(`SELECT * FROM users WHERE email = $1`, [body.email]);
     const email = result.rows[0];
 
     //verify user has an account
@@ -74,6 +74,18 @@ app.post('/api/auth/signup', (req, res) => {
     res.send(error)
   }
 })
+
+/* use PUT /api/users/:id/role to update user's status (from free to admin or vise versa) */
+app.patch('/api/users/:id/role', (req, res) => {
+  //get content of body
+  const body = req.body;
+
+  //updating field 
+  let qs = `UPDATE users SET role = $1 WHERE id = $2`
+  query(qs, [body.role, req.params.id] ).then(data => res.send(`${data.rowCount} row inserted`))
+})
+
+
 /* RECIPES ------------------------------------------------ */
 
 /* GET /api/recipes for all recipes */

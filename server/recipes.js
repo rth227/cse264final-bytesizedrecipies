@@ -86,6 +86,17 @@ app.put('/api/recipes/:id', (req,res) => {
     res.send(error)
   }
 })
+
+/* routes DELETE /api/recipes/:id to delete a specific recipe by id */
+app.delete('/api/recipes/:id', (req,res) => {
+  try {
+    const qs = `DELETE from bytesized_recipes WHERE id = $1`
+    query(qs, [req.params.id]).then(data => res.send(`${data.rowCount} row inserted`))
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+})
 /* FAVORITES ------------------------------------------------ */
 
 /* COOKBOOKS ------------------------------------------------ */

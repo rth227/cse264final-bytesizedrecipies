@@ -316,20 +316,26 @@ app.delete('/api/cookbooks/:id/recipes/:recipeId', (req, res) => {
 /* route GET /api/search - you can search recipes from Spoonacular API */
 app.get('/api/search', async (req, res) => {
   try {
-    /* base of search item ex. /api/search?q=salad */
     const searchItem = req.query.q 
 
-    //validate data before searching
     if (!searchItem){
       return res.status(400).send('Missing required fields')
     }
 
-    //fetch specific search item
     const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`
+    
     const response = await fetch(url)
     const data = await response.json()
 
-    //map data returned to the recipe data 
+    // --- CRITICAL SAFETY GATE ---
+    // If Spoonacular returns an error or no results, data.results will be undefined.
+    // This check prevents the .map() crash!
+    if (!data || !data.results) {
+      console.error("Spoonacular API Error or No Results:", data);
+      return res.json([]); // Send an empty array so the frontend doesn't break
+    }
+
+    // Now it is safe to map
     const recipes = data.results.map(r => ({
       title: r.title,
       image_url: r.image,
@@ -343,10 +349,9 @@ app.get('/api/search', async (req, res) => {
 
     res.json(recipes)
   } catch (error) {
-    console.log(error)
-    res.send(error)
+    console.error("Internal Server Error:", error)
+    res.status(500).send("Internal Server Error")
   }
-
 })
 
 app.listen(app.get('port'), () =>{

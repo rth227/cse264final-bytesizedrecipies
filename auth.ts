@@ -55,18 +55,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // adding role and id for session for app
   callbacks: {
     async jwt({ token, user }) {
-      // getting id and role
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name; // This packs it into the token
       }
       return token;
     },
-    // role and id for session
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        // ADD THIS LINE BELOW:
+        session.user.name = token.name as string; // This hands it to your Navbar
       }
       return session;
     },

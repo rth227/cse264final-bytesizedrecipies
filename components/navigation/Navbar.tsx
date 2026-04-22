@@ -5,15 +5,16 @@ import { usePathname } from 'next/navigation';
 import { User, Search, PlusCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils"; // Standard shadcn helper
+import {useSession} from "next-auth/react";
 
 export default function Navbar() {
-  const pathname = usePathname();
-  
-  // This will eventually come from Riley's NextAuth session
-  // Toggle this to 'false' to test the "Sign In" view
-  const isLoggedIn = true; 
-  const isAdmin = true;
-
+    const pathname = usePathname();
+    // status can be "loading", "authenticated", or "unauthenticated"
+    const { data: session, status } = useSession();
+    
+    const isLoggedIn = status === "authenticated";
+    const isLoading = status === "loading";
+    const isAdmin = session?.user?.role === 'admin'; 
   const navLinks = [
     { name: 'Browse', href: '/', style: 'standard' },
     { name: 'My Cookbooks', href: '/cookbooks', style: 'serif' },
@@ -72,34 +73,44 @@ export default function Navbar() {
 
               {/* Profile Link */}
               <Link href="/profile">
-                <Button 
-                  variant="ghost" 
-                  className="gap-3 rounded-2xl hover:bg-slate-50 transition-all pl-2 pr-4 h-11 border border-transparent hover:border-slate-100"
-                >
-                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white shadow-sm overflow-hidden">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div className="hidden lg:flex flex-col items-start leading-none">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-bold text-slate-700 font-serif italic lowercase">kristen</span>
-                      {isAdmin && <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" title="Admin Active" />}
-                    </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Account</span>
-                  </div>
-                </Button>
-              </Link>
+              <Button 
+    variant="ghost" 
+    className="gap-3 rounded-2xl hover:bg-slate-50 transition-all pl-2 pr-4 h-11 border border-transparent hover:border-slate-100"
+  >
+    <div className="h-8 w-8 rounded-full bg-[#4A9B94] flex items-center justify-center text-white shadow-sm overflow-hidden text-[10px] font-bold">
+      {/* Dynamic Initials logic */}
+      {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+    </div>
+    
+    <div className="hidden lg:flex flex-col items-start leading-none">
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-bold text-slate-700 font-serif italic lowercase">
+          {/* THE FIX: Pulling the name column from bytesized_users */}
+          {session?.user?.name || "chef"}
+        </span>
+        
+        {isAdmin && (
+          <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" title="Admin Active" />
+        )}
+      </div>
+      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Account</span>
+    </div>
+  </Button>
+</Link>
             </div>
           ) : (
-            <Button 
-              variant="outline" 
-              className="rounded-full border-primary/20 hover:bg-primary hover:text-white transition-all px-6 border-2 font-black text-[10px] uppercase tracking-widest gap-2"
-            >
-              <User className="h-4 w-4" />
-              Sign In
-            </Button>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
+            <Link href="/login"> {/* Add this Link wrapper */}
+    <Button 
+      variant="outline" 
+      className="rounded-full border-primary/20 hover:bg-primary hover:text-white transition-all px-6 border-2 font-black text-[10px] uppercase tracking-widest gap-2"
+    >
+      <User className="h-4 w-4" />
+      Sign In
+    </Button>
+  </Link>
+  )}
+  </div>
+</div>
+</nav>
+);
 }

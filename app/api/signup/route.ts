@@ -16,8 +16,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // hash the password so real one never stored
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // check if email is already taken
+  const existing = await pool.query('SELECT id FROM bytesized_users WHERE email = $1', [email]);
+
+  if (existing.rows.length > 0) {
+    return NextResponse.json(
+      { error: 'this email is already registered. try logging in instead.' },
+      { status: 400 }
+    );
+  }
+
+// hash the password so we never store the real one
+const hashedPassword = await bcrypt.hash(password, 10);
 
   // insert the new user into the database
   try {

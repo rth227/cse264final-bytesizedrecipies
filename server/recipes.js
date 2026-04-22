@@ -312,6 +312,43 @@ app.delete('/api/cookbooks/:id/recipes/:recipeId', (req, res) => {
   }
 })
 
+/* API - Spoonacular ------------------------------------------------ */
+/* route GET /api/search - you can search recipes from Spoonacular API */
+app.get('/api/search', async (req, res) => {
+  try {
+    /* base of search item ex. /api/search?q=salad */
+    const searchItem = req.query.q 
+
+    //validate data before searching
+    if (!searchItem){
+      return res.status(400).send('Missing required fields')
+    }
+
+    //fetch specific search item
+    const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`
+    const response = await fetch(url)
+    const data = await response.json()
+
+    //map data returned to the recipe data 
+    const recipes = data.results.map(r => ({
+      title: r.title,
+      image_url: r.image,
+      meal_type: r.dishTypes,
+      dietary_tags: r.diets,
+      servings: r.servings,
+      prep_time: r.preparationMinutes,
+      cook_time: r.cookingMinutes, 
+      source_url: r.sourceUrl
+    }))
+
+    res.json(recipes)
+  } catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+
+})
+
 app.listen(app.get('port'), () =>{
   console.log('Server running at http://localhost:%d', app.get('port'))
 })

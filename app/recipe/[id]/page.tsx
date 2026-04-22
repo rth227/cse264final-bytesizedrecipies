@@ -1,77 +1,100 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Clock, Users, Flame, ChevronLeft, Check, BookPlus } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
 import SaveRecipeModal from '@/components/recipes/SaveRecipeModal';
-import { ArrowLeft, BookPlus, Clock, Users, Flame } from 'lucide-react';
 
 export default function RecipeDetailPage() {
-  const params = useParams();
+  const { id } = useParams();
+  const [recipe, setRecipe] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const getRecipeDetails = async () => {
+      try {
+        // We call a new endpoint on your backend to get one specific recipe
+        const response = await fetch(`http://localhost:8080/api/recipes/${id}`);
+        const data = await response.json();
+        console.log("DEBUG: Detail Page received:", data);
+        setRecipe(data);
+      } catch (error) {
+        console.error("Failed to load recipe:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) getRecipeDetails();
+  }, [id]);
+
+  if (loading) return <div className="p-20 text-center font-serif italic">Prepping your kitchen...</div>;
+  if (!recipe) return <div className="p-20 text-center">Recipe not found.</div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      {/* nav */}
-      <div className="flex justify-between items-center mb-8">
-        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-[#4A9B94] transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Back to Search</span>
+    <main className="min-h-screen bg-[#FDFBF7] pb-20">
+      {/* Header Image */}
+      <div className="relative h-[40vh] w-full">
+        <img src={recipe.image_url} className="h-full w-full object-cover" alt={recipe.title} />
+        <Link href="/" className="absolute top-8 left-8 p-3 bg-white/90 backdrop-blur-md rounded-full shadow-lg">
+          <ChevronLeft size={24} />
         </Link>
+      </div>
 
-        {/* user saves recipe */}
-        <button 
-          onClick={() => setIsSaveModalOpen(true)}
-          className="flex items-center gap-2 bg-white border border-slate-200 px-6 py-3 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all text-slate-600 shadow-sm"
-        >
-          <BookPlus className="h-4 w-4 text-[#4A9B94]" />
-          Add to Cookbook
-        </button>
+      <div className="max-w-4xl mx-auto px-6 -mt-20 relative z-10">
+        <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-xl border border-slate-50">
+          <h1 className="text-5xl font-serif italic text-slate-800 mb-8">{recipe.title}</h1>
+          <button 
+              onClick={() => setIsSaveModalOpen(true)}
+              className={`shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-xs transition-all shadow-sm border ${
+                isSaved 
+                  ? "bg-[#4A9B94] text-white border-[#4A9B94]" 
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {isSaved ? <Check size={16} /> : <BookPlus size={16} className="text-[#4A9B94]" />}
+              {isSaved ? "Saved to Cookbook" : "Add to Cookbook"}
+            </button>
+        
+          {/* Stats Row */}
+          <div className="flex flex-wrap gap-8 mb-12 py-6 border-y border-slate-50">
+            <div className="flex items-center gap-3">
+              <Clock className="text-[#4A9B94]" />
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-300">Time</p>
+                <p className="text-lg font-bold">{recipe.prep_time}m</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Users className="text-[#4A9B94]" />
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-300">Servings</p>
+                <p className="text-lg font-bold">{recipe.servings}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-serif italic text-slate-800">Instructions</h2>
+            <div 
+              className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: recipe.instructions || "Follow the source link for full steps." }}
+            />
+          </div>
+        </div>
       </div>
       <SaveRecipeModal 
         isOpen={isSaveModalOpen} 
         onClose={() => setIsSaveModalOpen(false)} 
-        recipeTitle="Creamy Garlic Pasta" // This will eventually be dynamic
+        recipeTitle={recipe.title}
+        recipeId={id}
+        onSaveSuccess={() => setIsSaved(true)} // Optional: updates the button to "Saved"
       />
-
-      {/* hero section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-        <div className="rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200 aspect-square">
-           <img 
-            src="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800" 
-            className="w-full h-full object-cover" 
-            alt="Recipe"
-          />
-        </div>
-
-        <div className="flex flex-col justify-center space-y-6">
-          <h1 className="text-5xl font-serif italic text-slate-800 leading-tight">
-            Creamy Garlic Pasta
-          </h1>
-          
-          <div className="flex gap-6 border-y border-slate-100 py-6">
-            <div className="text-center">
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest mb-1">Time</p>
-              <p className="text-sm font-bold text-slate-600 flex items-center gap-1 justify-center">
-                <Clock className="h-3 w-3 text-[#4A9B94]" /> 20m
-              </p>
-            </div>
-            <div className="text-center border-x border-slate-100 px-6">
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest mb-1">Servings</p>
-              <p className="text-sm font-bold text-slate-600 flex items-center gap-1 justify-center">
-                <Users className="h-3 w-3 text-[#4A9B94]" /> 2
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest mb-1">Calories</p>
-              <p className="text-sm font-bold text-slate-600 flex items-center gap-1 justify-center">
-                <Flame className="h-3 w-3 text-[#4A9B94]" /> 450
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    </main>
   );
 }

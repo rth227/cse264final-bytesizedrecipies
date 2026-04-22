@@ -44,6 +44,31 @@ app.post('/api/auth/signup', (req, res) => {
   }
 })
 
+// Get detailed info for a single recipe
+app.get('/api/recipes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${process.env.SPOONACULAR_API_KEY}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Map the single recipe data to match your frontend
+    const recipe = {
+      title: data.title,
+      image_url: data.image,
+      prep_time: data.readyInMinutes,
+      servings: data.servings,
+      instructions: data.instructions,
+      extendedIngredients: data.extendedIngredients
+    };
+
+    res.json(recipe);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch recipe details" });
+  }
+});
+
 /* route POST api/auth/login cerigies credientaials */
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -322,8 +347,7 @@ app.get('/api/search', async (req, res) => {
       return res.status(400).send('Missing required fields')
     }
 
-    const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`
-    
+    const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&fillIngredients=true&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`;    
     const response = await fetch(url)
     const data = await response.json()
 
@@ -337,15 +361,14 @@ app.get('/api/search', async (req, res) => {
 
     // Now it is safe to map
     const recipes = data.results.map(r => ({
+      id: r.id,
       title: r.title,
       image_url: r.image,
-      meal_type: r.dishTypes,
-      dietary_tags: r.diets,
+      prep_time: r.readyInMinutes, // Spoonacular uses readyInMinutes
       servings: r.servings,
-      prep_time: r.preparationMinutes,
-      cook_time: r.cookingMinutes, 
+      extendedIngredients: r.extendedIngredients, 
       source_url: r.sourceUrl
-    }))
+    }));
 
     res.json(recipes)
   } catch (error) {

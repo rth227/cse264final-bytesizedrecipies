@@ -93,8 +93,12 @@ export default function RecipeDetailPage() {
   onClose={() => setIsSaveModalOpen(false)} 
   recipeId={id}
   recipeTitle={recipe.title}
-  // FIX: You need to pass these props so they aren't NULL in the DB
-  ingredients={recipe.ingredients} 
+  // FIX: Use extendedIngredients and map it to a string
+  ingredients={
+    recipe.extendedIngredients 
+      ? recipe.extendedIngredients.map((ing: any) => ing.original || ing.name).join(', ')
+      : ""
+  } 
   instructions={recipe.instructions}
   image={recipe.image_url}
   mealType={recipe.meal_type || "recipe"}

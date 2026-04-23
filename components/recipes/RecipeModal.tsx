@@ -1,9 +1,9 @@
 "use client";
 
-import { X, ChefHat } from 'lucide-react';
+import { X, ChefHat, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { useState } from 'react'; 
+import { useState, useEffect } from 'react'; 
 import SaveRecipeModal from './SaveRecipeModal';
 import Link from 'next/link';
 
@@ -16,16 +16,37 @@ interface RecipeModalProps {
 
 export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = false }: RecipeModalProps) {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [recipeDetails, setRecipeDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  if (!recipe) return null;
+  useEffect(() => {
+    const fetchFullDetails = async () => {
+      if (isOpen && recipe?.id) {
+        setLoadingDetails(true);
+        try {
+            const res = await fetch(
+                `https://api.spoonacular.com/recipes/${recipe.id}/information?apiKey=${process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY}`
+              );
+          const data = await res.json();
+          setRecipeDetails(data);
+        } catch (err) {
+          console.error("Error fetching recipe details:", err);
+        } finally {
+          setLoadingDetails(false);
+        }
+      }
+    };
+
+    fetchFullDetails();
+  }, [isOpen, recipe?.id]);
+
+  if (!recipe || !isOpen) return null;
 
   const title = recipe.title || recipe.recipe_name || "Untitled Recipe";
   const image = recipe.image || recipe.image_url || recipe.recipe_image;
   
-  const rawIngredients = recipe.extendedIngredients || recipe.ingredients || [];
-  const ingredientsArray = typeof rawIngredients === 'string' 
-    ? rawIngredients.replace(/{|}|"/g, '').split(',') 
-    : rawIngredients;
+  // FIX: Prioritize the detailed ingredients from the fetch over the empty search result
+  const ingredientsToDisplay = recipeDetails?.extendedIngredients || [];
 
   return (
     <AnimatePresence>
@@ -49,7 +70,7 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
             </button>
 
             {/* Left Side: Image */}
-            <div className="relative w-full md:w-1/2 h-64 md:h-full overflow-hidden">
+            <div className="relative w-full md:w-1/2 h-64 md:h-full overflow-hidden bg-slate-50">
               <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover" />
             </div>
 
@@ -58,20 +79,29 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
               <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10">
                 <h2 className="text-4xl font-serif italic text-slate-800">{title}</h2>
                 
-                {/* Pantry List - Starts immediately after title now */}
                 <div className="space-y-6">
                   <h3 className="text-xs font-black uppercase tracking-widest text-[#4A9B94] flex items-center gap-3">
                     <ChefHat size={18} /> Pantry List
                   </h3>
+                  
                   <div className="grid grid-cols-1 gap-y-1">
-                    {ingredientsArray.map((ing: any, i: number) => (
-                      <div key={i} className="py-3 border-b border-slate-50 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#4A9B94]/30" />
-                        <span className="text-sm text-slate-600 capitalize">
-                          {ing.original || ing.name || ing}
-                        </span>
+                    {loadingDetails ? (
+                      <div className="flex items-center gap-2 text-slate-400 py-4">
+                        <Loader2 className="animate-spin" size={16} />
+                        <span className="text-sm italic">Loading ingredients...</span>
                       </div>
-                    ))}
+                    ) : ingredientsToDisplay.length > 0 ? (
+                      ingredientsToDisplay.map((ing: any, i: number) => (
+                        <div key={i} className="py-3 border-b border-slate-50 flex items-center gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#4A9B94]/30" />
+                          <span className="text-sm text-slate-600 capitalize">
+                            {ing.original || ing.name}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">No ingredients found.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -87,31 +117,34 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
                 {showSaveButton && (
                   <Button 
                     onClick={() => setIsSaveModalOpen(true)}
+                    // Disable button until we have the data to save
+                    disabled={loadingDetails || !recipeDetails}
                     variant="outline"
-                    className="flex-1 border-slate-200 text-slate-600 rounded-2xl h-14 font-bold hover:bg-slate-50 transition-all"
+                    className="flex-1 border-slate-200 text-slate-600 rounded-2xl h-14 font-bold hover:bg-slate-50 transition-all disabled:opacity-50"
                   >
-                    Add to Cookbook
+                    {loadingDetails ? "Fetching..." : "Add to Cookbook"}
                   </Button>
                 )}
               </div>
             </div>
 
+            {/* Save Modal */}
             <SaveRecipeModal
-  isOpen={isSaveModalOpen}
-  onClose={() => setIsSaveModalOpen(false)}
-  recipeId={recipe.id}
-  recipeTitle={title}
-  // FIX: Convert your array back to a string so handleConfirm can process it
-  ingredients={
-    ingredientsArray.length > 0 
-      ? ingredientsArray.map((ing: any) => ing.original || ing.name || ing).join(', ')
-      : ""
-  }
-  instructions={recipe.instructions || ""}
-  image={image}
-  mealType={recipe.dishTypes?.[0] || recipe.meal_type || "main course"} 
-  onSaveSuccess={() => setIsSaveModalOpen(false)}
-/>
+              isOpen={isSaveModalOpen}
+              onClose={() => setIsSaveModalOpen(false)}
+              recipeId={recipe.id}
+              recipeTitle={recipeDetails?.title || recipe.title}
+              image={recipeDetails?.image || recipe.image}
+              ingredients={
+                recipeDetails?.extendedIngredients 
+                  ? recipeDetails.extendedIngredients.map((i: any) => i.original).join(', ') 
+                  : ""
+              }
+              instructions={recipeDetails?.instructions || ""}
+              onSaveSuccess={() => {
+                setIsSaveModalOpen(false);
+              }}
+            />
           </motion.div>
         </div>
       )}

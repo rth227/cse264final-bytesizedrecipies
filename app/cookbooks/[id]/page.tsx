@@ -30,7 +30,6 @@ export default function SingleCookbookPage() {
       fetch(`http://localhost:8080/api/cookbooks/${cookbookId}/recipes`)
         .then(res => res.json())
         .then(data => {
-          // FIX: Check if data is the array itself, or if it's inside a 'recipes' property
           if (Array.isArray(data)) {
             setRecipes(data);
           } else if (data.recipes && Array.isArray(data.recipes)) {
@@ -38,8 +37,6 @@ export default function SingleCookbookPage() {
           } else {
             setRecipes([]);
           }
-  
-          // Handle the name separately
           setCookbookName(data.name || "My Cookbook");
           setLoading(false);
         })
@@ -92,7 +89,7 @@ export default function SingleCookbookPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {recipes.map((recipe, index) => (
           <motion.div
-          key={`${recipe.id}-${index}`}
+            key={`${recipe.id}-${index}`} // Unique key to prevent console errors
             onClick={() => setSelectedRecipe(recipe)}
             whileHover={{ y: -10 }}
             initial={{ opacity: 0, y: 20 }}
@@ -101,17 +98,16 @@ export default function SingleCookbookPage() {
             className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer flex flex-col h-full"
           >
             <div className="h-44 bg-slate-50 relative flex items-center justify-center border-b border-slate-50 overflow-hidden">
-   {/* FIX: Check for image_url (DB) or image (API fallback) */}
-   {(recipe.image_url || recipe.image) ? (
-     <img 
-       src={recipe.image_url || recipe.image} 
-       alt={recipe.title} 
-       className="w-full h-full object-cover" 
-     />
-   ) : (
-     <Utensils className="text-slate-200" size={32} />
-   )}
-</div>
+               {(recipe.image_url || recipe.image) ? (
+                 <img 
+                   src={recipe.image_url || recipe.image} 
+                   alt={recipe.title} 
+                   className="w-full h-full object-cover" 
+                 />
+               ) : (
+                 <Utensils className="text-slate-200" size={32} />
+               )}
+            </div>
 
             <div className="p-8 flex-1 flex flex-col justify-between">
               <h3 className="text-2xl font-serif italic text-slate-800 mb-6 group-hover:text-[#4A9B94] transition-colors leading-tight">
@@ -142,32 +138,21 @@ export default function SingleCookbookPage() {
         {selectedRecipe && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
             <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSelectedRecipe(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" 
             />
             
             <motion.div 
-              initial={{ y: 50, opacity: 0 }} 
-              animate={{ y: 0, opacity: 1 }} 
-              exit={{ y: 50, opacity: 0 }}
+              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
               className="relative bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
             >
-              {/* Image Section */}
               <div className="relative h-64 bg-slate-100 shrink-0">
-                {selectedRecipe.image_url ? (
-                  <img 
-                    src={selectedRecipe.image_url} 
-                    alt={selectedRecipe.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Utensils size={48} className="text-slate-200" />
-                  </div>
-                )}
+                <img 
+                  src={selectedRecipe.image_url || selectedRecipe.image} 
+                  alt={selectedRecipe.title}
+                  className="w-full h-full object-cover"
+                />
                 <button 
                   onClick={() => setSelectedRecipe(null)}
                   className="absolute top-6 right-6 p-2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-lg transition-all"
@@ -176,7 +161,6 @@ export default function SingleCookbookPage() {
                 </button>
               </div>
 
-              {/* modal header info */}
               <div className="p-10 border-b border-slate-50 bg-white">
                 <h2 className="text-4xl font-serif italic text-slate-800">{selectedRecipe.title}</h2>
                 <div className="flex gap-4 mt-3">
@@ -186,33 +170,50 @@ export default function SingleCookbookPage() {
                 </div>
               </div>
 
-              {/* scrollable content */}
               <div className="p-10 space-y-12 overflow-y-auto">
-                <section>
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4A9B94] mb-6">Pantry List</h4>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  {selectedRecipe.ingredients && (
-  (typeof selectedRecipe.ingredients === 'string' 
-    ? selectedRecipe.ingredients.replace(/{|}|"/g, '').split(',') 
-    : selectedRecipe.ingredients
-  ).map((ing: string, i: number) => (
-    <li key={i} className="flex items-start gap-3 text-slate-600 font-medium text-sm">
-      <div className="w-1.5 h-1.5 rounded-full bg-[#4A9B94] mt-1.5 shrink-0" />
-      <span>{ing.trim()}</span>
-    </li>
-  ))
-)}
-  
-</ul>
-                </section>
+              <section>
+  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4A9B94] mb-6">Pantry List</h4>
+  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+    {(() => {
+      // 1. Get the data from the recipe
+      const rawData = selectedRecipe.ingredients;
+      
+      // 2. Normalize it into a clean array of strings
+      let ingredientsArray: string[] = [];
+      
+      if (typeof rawData === 'string') {
+        // Clean up Postgres array format {"item 1", "item 2"}
+        ingredientsArray = rawData.replace(/{|}|"/g, '').split(',').map(s => s.trim());
+      } else if (Array.isArray(rawData)) {
+        ingredientsArray = rawData.map((ing: any) => 
+          typeof ing === 'string' ? ing : (ing.original || ing.name || "Unknown Ingredient")
+        );
+      }
+
+      // 3. Render the list
+      if (ingredientsArray.length === 0 || (ingredientsArray.length === 1 && ingredientsArray[0] === "")) {
+        return <p className="text-slate-400 italic text-sm">No ingredients found in database.</p>;
+      }
+
+      return ingredientsArray.map((ingText, i) => (
+        <li key={i} className="flex items-start gap-3 text-slate-600 font-medium text-sm">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#4A9B94] mt-1.5 shrink-0" />
+          <span className="capitalize">{ingText}</span>
+        </li>
+      ));
+    })()}
+  </ul>
+</section>
 
                 <section>
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4A9B94] mb-6">Preparation</h4>
-                  <p className="text-slate-600 leading-relaxed text-sm whitespace-pre-line">
-                    {selectedRecipe.instructions && selectedRecipe.instructions !== "See details" 
-                      ? selectedRecipe.instructions 
-                      : "Detailed instructions are not available for this legacy entry."}
-                  </p>
+                  {/* Rendering HTML instructions using dangerouslySetInnerHTML */}
+                  <div 
+                    className="text-slate-600 leading-relaxed text-sm prose prose-slate max-w-none list-decimal"
+                    dangerouslySetInnerHTML={{ 
+                      __html: selectedRecipe.instructions || "Check cooking mode for steps." 
+                    }} 
+                  />
                 </section>
                 
                 <button 

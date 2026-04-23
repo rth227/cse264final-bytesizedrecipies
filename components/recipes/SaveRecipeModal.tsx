@@ -13,12 +13,14 @@ export default function SaveRecipeModal({
   ingredients, 
   instructions, 
   image,
-  mealType // Add this here
-}: any) {  const [selectedId, setSelectedId] = useState<number | null>(null);
+  mealType 
+}: any) {  
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'success'>('idle');
   const [cookbooks, setCookbooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch the user's cookbooks when the modal opens
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
@@ -39,19 +41,20 @@ export default function SaveRecipeModal({
     if (!selectedId) return;
     setStatus('saving');
   
+    // Format ingredients into a PostgreSQL-friendly array string: {"item1", "item2"}
     const postgresArray = ingredients 
       ? `{${ingredients.split(',').map((i: string) => `"${i.trim().replace(/"/g, '\\"')}"`).join(',')}}`
       : '{}';
   
-      const payload = {
-        recipeId: recipeId,
-        cookbookId: selectedId,
-        recipeTitle: recipeTitle || "Untitled Recipe",
-        ingredients: postgresArray, 
-        instructions: instructions || "Check cooking mode for steps.",
-        image_url: image || "",
-        meal_type: mealType // ADD THIS: Matches your DB column name
-      };
+    const payload = {
+      recipeId: recipeId,
+      cookbookId: selectedId,
+      recipeTitle: recipeTitle || "Untitled Recipe",
+      ingredients: postgresArray, 
+      instructions: instructions || "Check cooking mode for steps.",
+      image_url: image || "",
+      meal_type: mealType || "recipe"
+    };
 
     try {
       const response = await fetch('http://localhost:8080/api/cookbooks/add', {
@@ -62,7 +65,6 @@ export default function SaveRecipeModal({
 
       if (response.ok) {
         setStatus('success');
-        // Small delay so the user sees the "Success" checkmark
         setTimeout(() => {
           onSaveSuccess();
           onClose();
@@ -83,7 +85,7 @@ export default function SaveRecipeModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
@@ -103,16 +105,16 @@ export default function SaveRecipeModal({
                    {recipeTitle}
                 </p>
               </div>
-              <button onClick={onClose} className="text-slate-300 hover:text-slate-600">
+              <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             {/* Cookbook List */}
-            <div className="p-6 space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="p-6 space-y-3 max-h-[300px] overflow-y-auto">
               {loading ? (
                 <div className="flex justify-center p-10">
-                  <Loader2 className="animate-spin text-slate-300" size={32} />
+                  <Loader2 className="animate-spin text-[#4A9B94]" size={32} />
                 </div>
               ) : cookbooks.length > 0 ? (
                 cookbooks.map((book) => (
@@ -150,22 +152,22 @@ export default function SaveRecipeModal({
               <button 
                 onClick={handleConfirm}
                 disabled={!selectedId || status !== 'idle'}
-                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center relative shadow-lg active:scale-95 disabled:opacity-50 disabled:grayscale"
+                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center relative shadow-lg active:scale-95 disabled:opacity-50"
                 style={{ backgroundColor: status === 'success' ? '#4A9B94' : '#0f172a', color: 'white' }}
               >
                 <AnimatePresence mode="wait">
                   {status === 'idle' && (
-                    <motion.span key="idle" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: -20 }}>
+                    <motion.span key="idle" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -10, opacity: 0 }}>
                       Confirm Save
                     </motion.span>
                   )}
                   {status === 'saving' && (
-                    <motion.span key="saving" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: -20 }}>
+                    <motion.span key="saving" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                       <Loader2 className="animate-spin h-5 w-5" />
                     </motion.span>
                   )}
                   {status === 'success' && (
-                    <motion.div key="success" className="flex items-center gap-2" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: -20 }}>
+                    <motion.div key="success" className="flex items-center gap-2" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                       <Check className="h-4 w-4" />
                       Saved
                     </motion.div>

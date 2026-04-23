@@ -20,7 +20,6 @@ export default function RecipeDetailPage() {
         // We call a new endpoint on your backend to get one specific recipe
         const response = await fetch(`http://localhost:8080/api/recipes/${id}`);
         const data = await response.json();
-        console.log("DEBUG: Detail Page received:", data);
         setRecipe(data);
       } catch (error) {
         console.error("Failed to load recipe:", error);

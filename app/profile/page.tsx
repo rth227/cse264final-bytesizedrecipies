@@ -1,137 +1,154 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Utensils, X, Clock, User, Plus, ChevronRight, Settings } from 'lucide-react';
-import RecipeCard from '@/components/recipes/RecipeCard'; 
-
-// Mock data
-const myRecipes = [
-  { id: 1, title: "Grandma's Garlic Pasta", time: "25 min", ingredients: ["Garlic", "Pasta", "Olive Oil", "Parsley"] },
-  { id: 2, title: "Sunday Roast Chicken", time: "1h 20m", ingredients: ["Whole Chicken", "Rosemary", "Lemon", "Potatoes"] },
-  { id: 3, title: "Bethlehem Berry Cobbler", time: "45 min", ingredients: ["Mixed Berries", "Flour", "Butter", "Sugar"] },
-];
+import { Utensils, X, Clock, User, Plus, ChevronRight, Image as ImageIcon, Loader2 } from 'lucide-react';
+import RecipeCard from '@/components/recipes/RecipeCard';
 
 export default function ProfilePage() {
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [cookbooks, setCookbooks] = useState<any[]>([]);
+  
+  // Form State
+  const [title, setTitle] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [instructions, setInstructions] = useState(""); 
+  const [selectedCookbook, setSelectedCookbook] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch('http://localhost:8080/api/cookbooks/all')
+      .then(res => res.json())
+      .then(data => setCookbooks(data))
+      .catch(err => console.error("Error loading cookbooks:", err));
+  }, []);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    
+    const recipeData = {
+      recipeId: Math.floor(Math.random() * 1000000), 
+      cookbookId: selectedCookbook,
+      recipeTitle: title,
+      ingredients: ingredients,
+      instructions: instructions,
+      image_url: imagePreview || "", 
+      meal_type: "homemade"
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/api/cookbooks/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recipeData),
+      });
+
+      if (response.ok) {
+        setIsUploadOpen(false);
+        setTitle(""); setIngredients(""); setInstructions(""); setImagePreview(null);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-16">
-      
-      {/* profile header */}
+      {/* Profile Header */}
       <div className="flex flex-col md:flex-row items-center gap-12 mb-20 p-12 bg-white rounded-[3.5rem] border border-slate-50 shadow-sm relative overflow-hidden">
-        {/* Decorative background element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#4A9B94]/5 rounded-full -mr-20 -mt-20 blur-3xl" />
-        
         <div className="w-40 h-40 bg-slate-50 rounded-[3rem] flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-100 relative z-10">
           <User size={64} strokeWidth={1.5} />
         </div>
-
         <div className="text-center md:text-left flex-1 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <h1 className="text-6xl font-serif italic text-slate-800 tracking-tight">Your Kitchen</h1>
-            
-          </div>
+          <h1 className="text-6xl font-serif italic text-slate-800 tracking-tight">Your Kitchen</h1>
           
-          <div className="flex flex-wrap justify-center md:justify-start gap-10 mt-8">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Total Recipes</span>
-              <span className="text-3xl font-serif italic text-[#4A9B94]">{myRecipes.length}</span>
-            </div>
-            <div className="w-px h-12 bg-slate-100 hidden md:block" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Cooking Since</span>
-              <span className="text-3xl font-serif italic text-slate-800">2026</span>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* recipe section */}
-      <section>
-        <div className="flex items-center justify-between mb-12 px-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#4A9B94]/10 rounded-2xl flex items-center justify-center text-[#4A9B94]">
-              <Utensils size={20} />
-            </div>
-            <h2 className="text-3xl font-serif italic text-slate-800 tracking-tight">My Recipes</h2>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {myRecipes.map((recipe) => (
-            <motion.div 
-              key={recipe.id} 
-              whileHover={{ y: -8 }}
-              onClick={() => setSelectedRecipe(recipe)} 
-              className="cursor-pointer"
-            >
-               <RecipeCard 
-                  title={recipe.title} 
-                  time={recipe.time} 
-                />
-            </motion.div>
-          ))}
-
-        </div>
-      </section>
-
+      {/* Upload Modal */}
       <AnimatePresence>
-        {selectedRecipe && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
+        {isUploadOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
             <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedRecipe(null)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" 
-            />
-            
-            <motion.div 
-              initial={{ y: 100, opacity: 0, scale: 0.9 }} 
-              animate={{ y: 0, opacity: 1, scale: 1 }} 
-              exit={{ y: 100, opacity: 0, scale: 0.9 }}
-              className="relative bg-white w-full max-w-2xl rounded-[4rem] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-5xl rounded-[3rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              {/* Modal Top Bar */}
-              <div className="p-12 border-b border-slate-50 flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Clock size={14} className="text-[#4A9B94]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#4A9B94]">
-                      {selectedRecipe.time} Preparation
-                    </span>
-                  </div>
-                  <h2 className="text-5xl font-serif italic text-slate-800 tracking-tight leading-tight">
-                    {selectedRecipe.title}
-                  </h2>
-                </div>
-                <button onClick={() => setSelectedRecipe(null)} className="p-4 hover:bg-slate-50 rounded-full transition-colors group">
-                  <X size={28} className="text-slate-300 group-hover:text-slate-800 transition-colors" />
-                </button>
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-4xl font-serif italic text-slate-800">New Creation</h2>
+                <button onClick={() => setIsUploadOpen(false)}><X className="text-slate-300 hover:text-slate-800" /></button>
               </div>
 
-              {/* modal body */}
-              <div className="p-12 space-y-12 overflow-y-auto">
-                <section>
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 border-b border-slate-50 pb-4">
-                    Ingredients List
-                  </h4>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-12">
-                    {selectedRecipe.ingredients.map((ing: string) => (
-                      <li key={ing} className="flex items-center gap-4 text-slate-600 font-medium list-none group">
-                        <div className="w-2 h-2 rounded-full bg-[#4A9B94]/20 border border-[#4A9B94]/40 group-hover:bg-[#4A9B94] transition-colors" /> 
-                        {ing}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-                
-                <button 
-                  onClick={() => setSelectedRecipe(null)}
-                  className="w-full bg-slate-900 text-white py-8 rounded-[2rem] font-black uppercase tracking-[0.4em] text-[10px] shadow-2xl hover:bg-[#4A9B94] transition-all flex items-center justify-center gap-3"
-                >
-                  Close Archive <ChevronRight size={14} />
-                </button>
-              </div>
+              <form onSubmit={handleUpload} className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Recipe Title</label>
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full bg-slate-50 border-none rounded-2xl p-4 font-bold text-slate-700" placeholder="e.g. Lemon Basil Risotto" />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Assign to Cookbook</label>
+                    <select required value={selectedCookbook} onChange={(e) => setSelectedCookbook(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-slate-600 appearance-none font-bold">
+                      <option value="">Select a Collection...</option>
+                      {cookbooks.map(cb => <option key={cb.id} value={cb.id}>{cb.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Ingredients</label>
+                    <textarea value={ingredients} onChange={(e) => setIngredients(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 h-28 resize-none font-medium text-slate-600" placeholder="2 cups Rice, 1 Lemon..." />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Cooking Steps</label>
+                    <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 h-40 resize-none font-medium text-slate-600" placeholder="1. Boil water..." />
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Recipe Photo</label>
+                  
+                  {/* Smaller Photo Container */}
+                  <div 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="w-full h-48 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center cursor-pointer overflow-hidden group hover:border-[#4A9B94]/30 transition-all relative mb-6"
+                  >
+                    {imagePreview ? (
+                      <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                    ) : (
+                      <div className="text-center">
+                        <ImageIcon size={32} className="text-slate-200 mb-2 mx-auto group-hover:text-[#4A9B94] transition-colors" />
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Select Photo</span>
+                      </div>
+                    )}
+                    {/* The actual hidden input */}
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleImageChange} 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      accept="image/*" 
+                    />
+                  </div>
+
+                  <button type="submit" disabled={isUploading || !selectedCookbook} className="w-full bg-[#4A9B94] text-white py-6 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-[#3d827b] transition-all disabled:opacity-50 mt-auto">
+                    {isUploading ? <Loader2 className="animate-spin mx-auto" /> : "Save Recipe to Kitchen"}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

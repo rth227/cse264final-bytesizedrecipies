@@ -18,7 +18,7 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
-
+const query = (text, params) => pool.query(text, params);
 pool.connect((err, client, release) => {
   if (err) {
     return console.error('Error acquiring client', err.stack);
@@ -158,9 +158,18 @@ app.post('/api/cookbooks/create', async (req, res) => {
 app.post('/api/cookbooks/add', async (req, res) => {
   const { recipeId, cookbookId, recipeTitle, ingredients, instructions, image_url, meal_type } = req.body;
 
+  // IMPORTANT: If ingredients/instructions are coming in as strings from the profile modal 
+  // but arrays from the upload page, we force them into arrays here so Postgres doesn't complain.
+  const ingredientsArray = Array.isArray(ingredients) 
+    ? ingredients 
+    : ingredients.split(',').map(i => i.trim());
+
+  const instructionsArray = Array.isArray(instructions) 
+    ? instructions 
+    : instructions.split('\n').map(i => i.trim());
+
   try {
-    // STEP 1: Ensure the recipe exists in bytesized_recipes
-    // We use "ON CONFLICT" so it updates if the recipe was already there
+    // STEP 1: Insert or Update the recipe
     await pool.query(
       `INSERT INTO bytesized_recipes (id, title, ingredients, instructions, image_url, meal_type, created_by) 
        VALUES ($1, $2, $3, $4, $5, $6, 1) 
@@ -169,11 +178,10 @@ app.post('/api/cookbooks/add', async (req, res) => {
          ingredients = EXCLUDED.ingredients,
          instructions = EXCLUDED.instructions,
          image_url = EXCLUDED.image_url`,
-      [recipeId, recipeTitle, ingredients, instructions, image_url, meal_type || 'recipe']
+      [recipeId, recipeTitle, ingredientsArray, instructionsArray, image_url, meal_type || 'homemade']
     );
 
-    // STEP 2: Now that Step 1 is DONE, create the link
-    // This will no longer fail the foreign key check because the recipe ID now exists
+    // STEP 2: Link to the cookbook
     await pool.query(
       `INSERT INTO bytesized_cookbook_recipes (cookbook_id, recipe_id) 
        VALUES ($1, $2) 
@@ -185,7 +193,7 @@ app.post('/api/cookbooks/add', async (req, res) => {
 
   } catch (err) {
     console.error("Database Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to save recipe to database." });
   }
 });
 

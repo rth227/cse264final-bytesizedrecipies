@@ -7,7 +7,8 @@ import RecipeGrid from '@/components/recipes/RecipeGrid';
 import RecipeModal from '@/components/recipes/RecipeModal';
 
 export default function Home() {
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [recipes, setRecipes] = useState<any[]>([]); // This starts as an empty list
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,8 +18,7 @@ export default function Home() {
     
     try {
       // Talking to your local backend on Port 8080
-      const response = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(ingredients)}`);
-      if (!response.ok) {
+      const response = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(ingredients)}&addRecipeInformation=true&fillIngredients=true`);      if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
       
@@ -53,9 +53,6 @@ export default function Home() {
 
         <div className="mb-20">
           <IngredientInput onSearch={fetchRecipes} />
-          <div className="flex justify-center mt-8">
-            <CategoryPills />
-          </div>
         </div>
 
         {/* VITAL CHANGE: 
@@ -67,17 +64,21 @@ export default function Home() {
             Sifting through the pantry...
           </div>
         ) : (
-          <RecipeGrid 
+            <RecipeGrid 
             recipes={recipes} 
-            onRecipeClick={(r: any) => setSelectedRecipe(r)} 
+            onRecipeClick={(r: any) => {
+              setSelectedRecipe(r);
+              setIsModalOpen(true); 
+            }} 
           />
         )}
 
-        <RecipeModal 
-          isOpen={!!selectedRecipe} 
-          recipe={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
-        />
+<RecipeModal 
+  isOpen={isModalOpen} 
+  onClose={() => setIsModalOpen(false)} 
+  recipe={selectedRecipe} 
+  showSaveButton={false} // This hides it on the search page
+/>
 
       </div>
     </main>

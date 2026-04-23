@@ -76,20 +76,7 @@ export default function RecipeCard({ recipe, onRecipeClick }: any) {
         />
         
         <div className="absolute top-3 right-3">
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); // Stop the modal from opening
-              setShowCookbookSelect(true); 
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest ${
-              isSaved 
-                ? "bg-[#4A9B94] text-white" 
-                : "bg-white/90 backdrop-blur-md text-slate-600 hover:bg-white"
-            }`}
-          >
-            {isSaved ? <Check size={14} /> : <ListPlus size={14} />}
-            {isSaved ? "Saved" : "Add to Cookbook"}
-          </button>
+          
         </div>
       </div>
 

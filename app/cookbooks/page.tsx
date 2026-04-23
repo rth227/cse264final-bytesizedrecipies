@@ -1,19 +1,31 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Book, Plus, Hash, Clock, ArrowUpRight, FolderPlus } from 'lucide-react';
+import { Book, Plus, Hash, Clock, ArrowUpRight, Loader2, FolderPlus } from 'lucide-react';
 
-const MY_COOKBOOKS = [
-  { id: 1, title: "Weekday Staples", count: 12, updated: "2d ago", description: "Quick meals for busy nights when time is short." },
-  { id: 2, title: "Family Secrets", count: 8, updated: "1w ago", description: "The recipes passed down through generations." },
-  { id: 3, title: "Healthy Eats", count: 15, updated: "3d ago", description: "Guilt-free favorites for a balanced lifestyle." },
-];
+
 
 export default function CookbooksPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+
+  const [cookbooks, setCookbooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8080/api/cookbooks/all')
+      .then(res => res.json())
+      .then(data => {
+        setCookbooks(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching cookbooks:", err);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-16">
@@ -29,58 +41,68 @@ export default function CookbooksPage() {
 
       {/* grid container */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        
-        {/* "Create New" card */}
-        <motion.div 
-          onClick={() => setIsCreateModalOpen(true)}
+  
+  {/* "Create New" card stays the same */}
+  {/* "Create New" card */}
+<motion.div 
+  onClick={() => setIsCreateModalOpen(true)}
+  whileHover={{ y: -10 }}
+  className="group cursor-pointer border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-12 min-h-[360px] transition-all hover:border-[#4A9B94]/40 hover:bg-[#4A9B94]/5 shadow-sm"
+>
+  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 group-hover:bg-white transition-all shadow-sm">
+    <Plus className="h-8 w-8 text-slate-300 group-hover:text-[#4A9B94]" />
+  </div>
+  <span className="text-[11px] font-black text-slate-400 group-hover:text-[#4A9B94] tracking-[0.2em] uppercase">
+    Add New Collection
+  </span>
+</motion.div>
+  {/* Real cookbook cards */}
+  {loading ? (
+    <div className="flex items-center justify-center col-span-full py-20">
+      <Loader2 className="animate-spin text-[#4A9B94]" size={40} />
+    </div>
+  ) : (
+    cookbooks.map((book) => (
+      <Link href={`/cookbooks/${book.id}`} key={book.id}>
+        <motion.div
           whileHover={{ y: -10 }}
-          className="group cursor-pointer border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-12 min-h-[360px] transition-all hover:border-[#4A9B94]/40 hover:bg-[#4A9B94]/5 shadow-sm"
+          className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100 hover:shadow-2xl transition-all flex flex-col justify-between h-full min-h-[360px]"
         >
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 group-hover:bg-white transition-all shadow-sm">
-            <Plus className="h-8 w-8 text-slate-300 group-hover:text-[#4A9B94]" />
+          <div className="flex justify-between items-start">
+            <div className="w-16 h-16 bg-[#4A9B94]/10 rounded-3xl flex items-center justify-center">
+              <Book className="text-[#4A9B94] h-7 w-7" />
+            </div>
+            <div className="bg-slate-50 px-4 py-2 rounded-full flex items-center gap-2 border border-slate-100">
+              <Hash className="h-3 w-3 text-[#4A9B94]" />
+              {/* Note: changed book.count to book.recipe_count to match DB */}
+              <span className="text-xs font-bold text-slate-600">{book.recipe_count || 0}</span>
+            </div>
           </div>
-          <span className="text-[11px] font-black text-slate-400 group-hover:text-[#4A9B94] tracking-[0.2em] uppercase">Add New Collection</span>
+          
+          <div className="mt-8 space-y-3">
+            <h3 className="text-3xl font-serif italic text-slate-800 leading-tight">
+              {book.name} {/* Changed from book.title to book.name */}
+            </h3>
+            <p className="text-sm text-slate-400 font-medium leading-relaxed line-clamp-2">
+              {/* Use a default description since the DB might not have one yet */}
+              {book.description || "A custom collection of your favorite recipes."}
+            </p>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-slate-50 flex justify-between items-center">
+            <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+              <Clock className="h-3 w-3" />
+              <span>Updated Recently</span>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-[#4A9B94] group-hover:text-white transition-all transform group-hover:rotate-45">
+              <ArrowUpRight className="h-5 w-5" />
+            </div>
+          </div>
         </motion.div>
-
-        {/* existing cookbook cards */}
-        {MY_COOKBOOKS.map((book) => (
-          <Link href={`/cookbooks/${book.id}`} key={book.id}>
-            <motion.div
-              whileHover={{ y: -10 }}
-              className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/60 transition-all cursor-pointer group flex flex-col justify-between h-full min-h-[360px]"
-            >
-              <div className="flex justify-between items-start">
-                <div className="w-16 h-16 bg-[#4A9B94]/10 rounded-3xl flex items-center justify-center group-hover:bg-[#4A9B94] transition-colors">
-                  <Book className="text-[#4A9B94] group-hover:text-white h-7 w-7 transition-colors" />
-                </div>
-                <div className="bg-slate-50 px-4 py-2 rounded-full flex items-center gap-2 border border-slate-100">
-                  <Hash className="h-3 w-3 text-[#4A9B94]" />
-                  <span className="text-xs font-bold text-slate-600">{book.count}</span>
-                </div>
-              </div>
-              
-              <div className="mt-8 space-y-3">
-                <h3 className="text-3xl font-serif italic text-slate-800 leading-tight group-hover:text-[#4A9B94] transition-colors">
-                  {book.title}
-                </h3>
-                <p className="text-sm text-slate-400 font-medium leading-relaxed line-clamp-2">
-                  {book.description}
-                </p>
-              </div>
-
-              <div className="mt-10 pt-6 border-t border-slate-50 flex justify-between items-center">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                  <Clock className="h-3 w-3" />
-                  <span>Updated {book.updated}</span>
-                </div>
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-[#4A9B94] group-hover:text-white transition-all transform group-hover:rotate-45">
-                  <ArrowUpRight className="h-5 w-5" />
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-        ))}
-      </div>
+      </Link>
+    ))
+  )}
+</div>
 
       {/* modal */}
       <AnimatePresence>

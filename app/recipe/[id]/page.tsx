@@ -89,12 +89,17 @@ export default function RecipeDetailPage() {
         </div>
       </div>
       <SaveRecipeModal 
-        isOpen={isSaveModalOpen} 
-        onClose={() => setIsSaveModalOpen(false)} 
-        recipeTitle={recipe.title}
-        recipeId={id}
-        onSaveSuccess={() => setIsSaved(true)} // Optional: updates the button to "Saved"
-      />
+  isOpen={isSaveModalOpen} 
+  onClose={() => setIsSaveModalOpen(false)} 
+  recipeId={id}
+  recipeTitle={recipe.title}
+  // FIX: You need to pass these props so they aren't NULL in the DB
+  ingredients={recipe.ingredients} 
+  instructions={recipe.instructions}
+  image={recipe.image_url}
+  mealType={recipe.meal_type || "recipe"}
+  onSaveSuccess={() => setIsSaved(true)} 
+/>
     </main>
   );
 }

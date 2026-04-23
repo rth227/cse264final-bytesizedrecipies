@@ -97,19 +97,21 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
             </div>
 
             <SaveRecipeModal
-              isOpen={isSaveModalOpen}
-              onClose={() => setIsSaveModalOpen(false)}
-              recipeId={recipe.id}
-              recipeTitle={title}
-              ingredients={
-                ingredientsArray.length > 0 
-                  ? ingredientsArray.map((ing: any) => ing.original || ing.name || ing).join(', ')
-                  : "No ingredient list available"
-              }
-              image={image}
-              mealType={recipe.dishTypes?.[0] || recipe.meal_type || "main course"} 
-              onSaveSuccess={() => setIsSaveModalOpen(false)}
-            />
+  isOpen={isSaveModalOpen}
+  onClose={() => setIsSaveModalOpen(false)}
+  recipeId={recipe.id}
+  recipeTitle={title}
+  // FIX: Convert your array back to a string so handleConfirm can process it
+  ingredients={
+    ingredientsArray.length > 0 
+      ? ingredientsArray.map((ing: any) => ing.original || ing.name || ing).join(', ')
+      : ""
+  }
+  instructions={recipe.instructions || ""}
+  image={image}
+  mealType={recipe.dishTypes?.[0] || recipe.meal_type || "main course"} 
+  onSaveSuccess={() => setIsSaveModalOpen(false)}
+/>
           </motion.div>
         </div>
       )}

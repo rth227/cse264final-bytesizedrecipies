@@ -92,7 +92,7 @@ export default function SingleCookbookPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {recipes.map((recipe, index) => (
           <motion.div
-            key={recipe.id}
+          key={`${recipe.id}-${index}`}
             onClick={() => setSelectedRecipe(recipe)}
             whileHover={{ y: -10 }}
             initial={{ opacity: 0, y: 20 }}

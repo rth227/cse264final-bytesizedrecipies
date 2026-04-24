@@ -1,11 +1,33 @@
-import express from 'express'
-import cors from 'cors'
-import 'dotenv/config'
+import 'dotenv/config'; 
+import express from 'express';
+import cors from 'cors';
+import pkg from 'pg';
+const { Pool } = pkg;
 
-import { query } from './db/postgres.js';
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const pool = new Pool({
+  user: 'rth227',
+  host: 'cse264.cru8ico68j35.us-east-1.rds.amazonaws.com',
+  database: 'cse264',  
+  password: 'rth227_lehigh',
+  port: 5432,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+const query = (text, params) => pool.query(text, params);
+pool.connect((err, client, release) => {
+  if (err) {
+    return console.error('Error acquiring client', err.stack);
+  }
+  console.log('Successfully connected to PostgreSQL');
+  release();
+});
 
 // create the app
-const app = express()
 // it's nice to set the port number so it's always the same
 app.set('port', process.env.PORT || 8080);
 // set up some middleware to handle processing body requests
@@ -43,6 +65,168 @@ app.post('/api/auth/signup', (req, res) => {
     res.send(error)
   }
 })
+
+// Get detailed info for a single recipe
+app.get('/api/recipes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${process.env.SPOONACULAR_API_KEY}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Map the single recipe data to match your frontend
+    const recipe = {
+      title: data.title,
+      image_url: data.image,
+      prep_time: data.readyInMinutes,
+      servings: data.servings,
+      instructions: data.instructions,
+      extendedIngredients: data.extendedIngredients
+    };
+
+    res.json(recipe);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch recipe details" });
+  }
+});
+
+app.get('/api/cookbooks/:id/recipes', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT r.* FROM bytesized_recipes r
+       JOIN bytesized_cookbook_recipes cr ON r.id = cr.recipe_id
+       WHERE cr.cookbook_id = $1`, // Ensure this matches your actual table name
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// get all cookbooks for the user
+app.get('/api/cookbooks', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id, c.name, COUNT(r.recipe_id) as recipe_count 
+      FROM bytesized_cookbooks c 
+      LEFT JOIN bytesized_cookbook_recipes r ON c.id = r.cookbook_id 
+      GROUP BY c.id, c.name
+    `);
+    
+    console.log("Cookbooks found:", result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("DB Error:", err);
+    res.status(500).json([]);
+  }
+});
+
+app.get('/api/cookbooks/all', async (req, res) => {
+  try {
+    // FIX: Use 'bytesized_cookbooks' instead of 'cookbooks'
+    const result = await pool.query(`
+      SELECT bc.*, COUNT(bcr.recipe_id) as recipe_count
+      FROM bytesized_cookbooks bc
+      LEFT JOIN bytesized_cookbook_recipes bcr ON bc.id = bcr.cookbook_id
+      GROUP BY bc.id
+      ORDER BY bc.id ASC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Failed to fetch cookbooks" });
+  }
+});
+
+app.post('/api/cookbooks/create', async (req, res) => {
+  const { name, user_id } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO bytesized_cookbooks (name, user_id) VALUES ($1, $2) RETURNING *',
+      [name, user_id || 1]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Could not create cookbook" });
+  }
+});
+
+app.post('/api/cookbooks/add', async (req, res) => {
+  const { recipeId, cookbookId, recipeTitle, ingredients, instructions, image_url, meal_type } = req.body;
+
+  // IMPORTANT: If ingredients/instructions are coming in as strings from the profile modal 
+  // but arrays from the upload page, we force them into arrays here so Postgres doesn't complain.
+  const ingredientsArray = Array.isArray(ingredients) 
+    ? ingredients 
+    : ingredients.split(',').map(i => i.trim());
+
+  const instructionsArray = Array.isArray(instructions) 
+    ? instructions 
+    : instructions.split('\n').map(i => i.trim());
+
+  try {
+    // STEP 1: Insert or Update the recipe
+    await pool.query(
+      `INSERT INTO bytesized_recipes (id, title, ingredients, instructions, image_url, meal_type, created_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, 1) 
+       ON CONFLICT (id) DO UPDATE SET 
+         title = EXCLUDED.title,
+         ingredients = EXCLUDED.ingredients,
+         instructions = EXCLUDED.instructions,
+         image_url = EXCLUDED.image_url`,
+      [recipeId, recipeTitle, ingredientsArray, instructionsArray, image_url, meal_type || 'homemade']
+    );
+
+    // STEP 2: Link to the cookbook
+    await pool.query(
+      `INSERT INTO bytesized_cookbook_recipes (cookbook_id, recipe_id) 
+       VALUES ($1, $2) 
+       ON CONFLICT DO NOTHING`,
+      [cookbookId, recipeId]
+    );
+
+    res.json({ success: true, message: "Recipe saved and linked!" });
+
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Failed to save recipe to database." });
+  }
+});
+
+app.get('/api/cookbooks/:id/recipes', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Fetch cookbook name
+    const cookbookResult = await pool.query('SELECT name FROM cookbooks WHERE id = $1', [id]);
+    const result = await pool.query(
+      `SELECT r.* FROM bytesized_recipes r
+       JOIN cookbook_recipes cr ON r.id = cr.recipe_id
+       WHERE cr.cookbook_id = $1`,
+      [id]
+    );
+    res.json(result.rows);
+    // 2. Fetch recipes with ALL necessary columns
+    const recipeResult = await pool.query(
+      `SELECT r.id, r.title, r.image_url, r.instructions, r.ingredients, r.meal_type 
+       FROM bytesized_recipes r
+       JOIN cookbook_recipes cr ON r.id = cr.recipe_id
+       WHERE cr.cookbook_id = $1`,
+      [id]
+    );
+
+    res.json({
+      name: cookbookResult.rows[0]?.name || "My Cookbook",
+      recipes: recipeResult.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch recipes" });
+  }
+});
 
 /* route POST api/auth/login cerigies credientaials */
 app.post('/api/auth/login', async (req, res) => {
@@ -316,37 +500,40 @@ app.delete('/api/cookbooks/:id/recipes/:recipeId', (req, res) => {
 /* route GET /api/search - you can search recipes from Spoonacular API */
 app.get('/api/search', async (req, res) => {
   try {
-    /* base of search item ex. /api/search?q=salad */
     const searchItem = req.query.q 
 
-    //validate data before searching
     if (!searchItem){
       return res.status(400).send('Missing required fields')
     }
 
-    //fetch specific search item
-    const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`
+    const url = `https://api.spoonacular.com/recipes/complexSearch?query=${searchItem}&fillIngredients=true&addRecipeInformation=true&apiKey=${process.env.SPOONACULAR_API_KEY}`;    
     const response = await fetch(url)
     const data = await response.json()
 
-    //map data returned to the recipe data 
+    // --- CRITICAL SAFETY GATE ---
+    // If Spoonacular returns an error or no results, data.results will be undefined.
+    // This check prevents the .map() crash!
+    if (!data || !data.results) {
+      console.error("Spoonacular API Error or No Results:", data);
+      return res.json([]); // Send an empty array so the frontend doesn't break
+    }
+
+    // Now it is safe to map
     const recipes = data.results.map(r => ({
+      id: r.id,
       title: r.title,
       image_url: r.image,
-      meal_type: r.dishTypes,
-      dietary_tags: r.diets,
+      prep_time: r.readyInMinutes, // Spoonacular uses readyInMinutes
       servings: r.servings,
-      prep_time: r.preparationMinutes,
-      cook_time: r.cookingMinutes, 
+      extendedIngredients: r.extendedIngredients, 
       source_url: r.sourceUrl
-    }))
+    }));
 
     res.json(recipes)
   } catch (error) {
-    console.log(error)
-    res.send(error)
+    console.error("Internal Server Error:", error)
+    res.status(500).send("Internal Server Error")
   }
-
 })
 
 app.listen(app.get('port'), () =>{

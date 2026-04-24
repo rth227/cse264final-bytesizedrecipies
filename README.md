@@ -15,8 +15,8 @@ Riley (Database & Auth Lead): PostgreSQL schema design, NextAuth.js implementati
 # Application Features and Requirements
 
 User Accounts & Roles:
-Standard User: Can search recipes, upload original content, and save favorites.
-Admin: Access to a custom Management Dashboard to moderate user-submitted content and manage ingredient tag normalization.
+Standard User: Can search recipes, upload original content, and save favorites to up to 5 cookbooks.
+Premium: Can create unlimited number of cookbooks. 
 Authentication: Secured via NextAuth.js with role-based access control.
 
 Database (PostgreSQL):

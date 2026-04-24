@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CornerDownLeft } from 'lucide-react'; 
+import { CornerDownLeft, Search } from 'lucide-react'; // Added Search icon
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button"; // Added Button
 import IngredientTag from "./IngredientTag"; 
 
-export default function IngredientInput() {
-  const [inputValue, setInputValue] = useState("");
+interface IngredientInputProps {
+    onSearch: (ingredients: string) => void;
+}
+
+export default function IngredientInput({ onSearch }: IngredientInputProps) {  
   const [ingredients, setIngredients] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState(""); // Removed the duplicate line
 
   const addIngredient = () => {
     const trimmed = inputValue.trim().toLowerCase();
@@ -21,6 +26,14 @@ export default function IngredientInput() {
 
   const removeIngredient = (target: string) => {
     setIngredients(ingredients.filter((ing) => ing !== target));
+  };
+
+  // NEW: Logic to send all tags to the backend
+  const handleFinalSearch = () => {
+    if (ingredients.length > 0) {
+      // Joins ['garlic', 'onion'] into "garlic,onion" for Gwenn's API
+      onSearch(ingredients.join(","));
+    }
   };
 
   return (
@@ -39,13 +52,13 @@ export default function IngredientInput() {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addIngredient()}
-          className="h-16 pl-6 pr-28 rounded-2xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all text-lg shadow-inner bg-white/80"
+          className="h-16 pl-6 pr-28 rounded-2xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all text-lg shadow-inner bg-white/80 text-black"
         />
         
-        {/* action square */}
         <div className="absolute right-2 top-2 bottom-2 p-1">
           <button 
             onClick={addIngredient}
+            type="button"
             className="h-full px-3 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-0.5 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm active:scale-95 group/btn"
           >
             <CornerDownLeft className="h-4 w-4 stroke-[2.5px]" />
@@ -53,7 +66,6 @@ export default function IngredientInput() {
         </div>
       </div>
 
-      {/* ingredient display area */}
       <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200 min-h-[120px]">
         <div className="flex flex-wrap gap-3">
           <AnimatePresence mode="popLayout">
@@ -76,6 +88,17 @@ export default function IngredientInput() {
             </motion.div>
           )}
         </div>
+      </div>
+
+      <div className="flex justify-center pt-2">
+        <Button 
+          onClick={handleFinalSearch}
+          disabled={ingredients.length === 0}
+          className="rounded-full px-8 py-6 h-auto text-lg font-bold gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all disabled:opacity-50"
+        >
+          <Search className="h-5 w-5" />
+          Find Recipes
+        </Button>
       </div>
     </div>
   );

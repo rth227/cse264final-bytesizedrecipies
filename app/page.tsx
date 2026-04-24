@@ -7,36 +7,38 @@ import RecipeGrid from '@/components/recipes/RecipeGrid';
 import RecipeModal from '@/components/recipes/RecipeModal';
 
 export default function Home() {
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [recipes, setRecipes] = useState<any[]>([]); // This starts as an empty list
+  const [isLoading, setIsLoading] = useState(false);
 
-  const mockRecipes = [
-    { 
-      id: 1, 
-      title: "Creamy Garlic Pasta", 
-      image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500", 
-      readyInMinutes: 20, 
-      servings: 2,
-      usedIngredientCount: 3, 
-      missedIngredientCount: 2,
-      extendedIngredients: [
-        { id: 1, name: "Pasta", amount: 1, unit: "lb" },
-        { id: 2, name: "Garlic", amount: 4, unit: "cloves" }
-      ]
-    },
-    { 
-      id: 2, 
-      title: "Avocado Toast with Egg", 
-      image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500", 
-      readyInMinutes: 10, 
-      servings: 1,
-      usedIngredientCount: 2, 
-      missedIngredientCount: 1,
-      extendedIngredients: [
-        { id: 3, name: "Avocado", amount: 1, unit: "whole" },
-        { id: 4, name: "Egg", amount: 1, unit: "large" }
-      ]
-    },
-  ];
+  const fetchRecipes = async (ingredients: string) => {
+    if (!ingredients) return;
+    setIsLoading(true);
+    
+    try {
+      // talking to local backend on Port 8080
+      const response = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(ingredients)}&addRecipeInformation=true&fillIngredients=true`);      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Incoming Data:", data);
+      console.log("Real recipes received:", data);
+      
+      // replaces the empty list with the results from Gwenn's API
+      if (Array.isArray(data)) {
+        setRecipes(data);
+      } else {
+        setRecipes([]); 
+      }
+    } catch (error) {
+      console.error("Fetch failed:", error);
+      setRecipes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="bg-[#FDFBF7] min-h-screen text-[#2C2C2C]">
@@ -50,22 +52,30 @@ export default function Home() {
         </section>
 
         <div className="mb-20">
-          <IngredientInput />
-          <div className="flex justify-center mt-8">
-            <CategoryPills />
-          </div>
+          <IngredientInput onSearch={fetchRecipes} />
         </div>
 
-        <RecipeGrid 
-          recipes={mockRecipes} 
-          onRecipeClick={(r: any) => setSelectedRecipe(r)} 
-        />
+        
+        {isLoading ? (
+          <div className="text-center py-20 font-serif italic text-[#4A9B94] animate-pulse text-2xl">
+            Sifting through the pantry...
+          </div>
+        ) : (
+            <RecipeGrid 
+            recipes={recipes} 
+            onRecipeClick={(r: any) => {
+              setSelectedRecipe(r);
+              setIsModalOpen(true); 
+            }} 
+          />
+        )}
 
-        <RecipeModal 
-          isOpen={!!selectedRecipe} 
-          recipe={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
-        />
+<RecipeModal 
+  isOpen={isModalOpen} 
+  onClose={() => setIsModalOpen(false)} 
+  recipe={selectedRecipe} 
+  showSaveButton={false} // This hides it on the search page
+/>
 
       </div>
     </main>

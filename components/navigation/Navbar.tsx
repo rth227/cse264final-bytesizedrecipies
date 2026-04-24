@@ -72,11 +72,7 @@ export default function Navbar() {
               </Link>
 
               {/* Profile Link */}
-              <Link href="/profile">
-              <Button 
-    variant="ghost" 
-    className="gap-3 rounded-2xl hover:bg-slate-50 transition-all pl-2 pr-4 h-11 border border-transparent hover:border-slate-100"
-  >
+              
     <div className="h-8 w-8 rounded-full bg-[#4A9B94] flex items-center justify-center text-white shadow-sm overflow-hidden text-[10px] font-bold">
       {/* Dynamic Initials logic */}
       {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
@@ -95,8 +91,6 @@ export default function Navbar() {
       </div>
       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Account</span>
     </div>
-  </Button>
-</Link>
             </div>
           ) : (
             <Link href="/login"> {/* Add this Link wrapper */}

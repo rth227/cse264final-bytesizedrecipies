@@ -12,7 +12,7 @@ export default function CookbooksPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // Track loading state for the button
 
-  // 1. Fetch initial cookbooks
+  // fetch initial cookbooks
   const fetchCookbooks = () => {
     setLoading(true);
     fetch('http://localhost:8080/api/cookbooks/all')
@@ -31,7 +31,7 @@ export default function CookbooksPage() {
     fetchCookbooks();
   }, []);
 
-  // 2. Handle Creating a new Collection
+  // handle creating a new collection
   const handleCreate = async () => {
     if (!newCollectionName.trim()) return;
   
@@ -43,9 +43,8 @@ export default function CookbooksPage() {
         body: JSON.stringify({
           name: newCollectionName,
           description: "A custom collection of your favorite recipes.",
-          // FIX: Add these fields to satisfy your backend's if-statements
           user_id: 1, 
-          user_role: 'admin' // Set to 'admin' or 'premium' so the backend allows it
+          user_role: 'admin' 
         }),
       });
   
@@ -54,7 +53,7 @@ export default function CookbooksPage() {
         setNewCollectionName("");
         setIsCreateModalOpen(false);
       } else {
-        // Logic to see what the specific text error was
+        // logic to see what the specific text error was
         const errorText = await response.text();
         console.error("Backend says:", errorText);
       }
@@ -67,7 +66,7 @@ export default function CookbooksPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-16">
-      {/* Header Section */}
+      {/* header section */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
         <div className="space-y-2">
           <h1 className="text-5xl font-serif italic text-slate-800 tracking-tight">My Cookbooks</h1>

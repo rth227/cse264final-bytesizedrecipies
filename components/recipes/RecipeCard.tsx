@@ -27,7 +27,7 @@ export default function RecipeCard({ recipe, onRecipeClick }: any) {
 
   return (
     <Card 
-      // 2. Clicking the card opens the full recipe modal
+      // clicking the card opens the full recipe modal
       onClick={() => onRecipeClick(recipe)}
       className="relative overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 group rounded-[28px] bg-white cursor-pointer"
     >
@@ -68,7 +68,7 @@ export default function RecipeCard({ recipe, onRecipeClick }: any) {
 
       {/* main card ui */}
       <div className="relative h-48 w-full overflow-hidden">
-        {/* 3. Use image_url from Gwenn's API */}
+        {/* use image_url from Gwenn's API */}
         <img 
           src={image_url || "https://images.unsplash.com/photo-1495195129352-aec325a55b65?w=500"} 
           alt={title} 

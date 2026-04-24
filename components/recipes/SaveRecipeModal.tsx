@@ -20,7 +20,7 @@ export default function SaveRecipeModal({
   const [cookbooks, setCookbooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch the user's cookbooks when the modal opens
+  // fetch the user's cookbooks when the modal opens
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
@@ -41,7 +41,7 @@ export default function SaveRecipeModal({
     if (!selectedId) return;
     setStatus('saving');
   
-    // Format ingredients into a PostgreSQL-friendly array string: {"item1", "item2"}
+    // format ingredients into a PostgreSQL-friendly array string: {"item1", "item2"}
     const postgresArray = ingredients 
       ? `{${ingredients.split(',').map((i: string) => `"${i.trim().replace(/"/g, '\\"')}"`).join(',')}}`
       : '{}';
@@ -97,7 +97,7 @@ export default function SaveRecipeModal({
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden"
           >
-            {/* Header */}
+            {/* header */}
             <div className="p-8 border-b border-slate-50 flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-serif italic text-slate-800">Save Recipe</h3>
@@ -110,7 +110,7 @@ export default function SaveRecipeModal({
               </button>
             </div>
 
-            {/* Cookbook List */}
+            {/* cookbook list */}
             <div className="p-6 space-y-3 max-h-[300px] overflow-y-auto">
               {loading ? (
                 <div className="flex justify-center p-10">
@@ -147,7 +147,7 @@ export default function SaveRecipeModal({
               )}
             </div>
 
-            {/* Action Footer */}
+            {/* action footer */}
             <div className="p-8 bg-slate-50/50">
               <button 
                 onClick={handleConfirm}

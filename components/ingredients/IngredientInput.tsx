@@ -90,7 +90,6 @@ export default function IngredientInput({ onSearch }: IngredientInputProps) {
         </div>
       </div>
 
-      {/* NEW: Final Search Button */}
       <div className="flex justify-center pt-2">
         <Button 
           onClick={handleFinalSearch}

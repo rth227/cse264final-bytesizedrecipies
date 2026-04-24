@@ -13,7 +13,7 @@ export default function UploadPage() {
   const [cookbooks, setCookbooks] = useState<any[]>([]);
   const [isPublished, setIsPublished] = useState(false);
   
-  // Form state
+  // form state
   const [recipeName, setRecipeName] = useState("");
   const [time, setTime] = useState("");
   const [servings, setServings] = useState("");
@@ -25,7 +25,7 @@ export default function UploadPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch real cookbooks from your backend
+  // fetch real cookbooks from your backend
   useEffect(() => {
     fetch('http://localhost:8080/api/cookbooks/all')
       .then(res => res.json())
@@ -139,7 +139,6 @@ export default function UploadPage() {
             <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
           </div>
 
-          {/* This container now holds BOTH Time and Servings */}
           <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Total Time</label>
@@ -165,7 +164,7 @@ export default function UploadPage() {
           </div>
         </div>
 
-        {/* Right Column */}
+        {/* right column */}
         <div className="lg:col-span-8 space-y-12">
           <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10">
             <div className="space-y-3">
@@ -189,7 +188,7 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {/* Steps */}
+            {/* steps */}
             <div className="space-y-8 pt-6">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Preparation</label>
               <div className="space-y-6">
@@ -207,7 +206,6 @@ export default function UploadPage() {
 
           
 
-          {/* Collection Select - Only one box now */}
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-3"><Book size={16} className="text-[#4A9B94]" /><label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Collection</label></div>
             <div className="relative">

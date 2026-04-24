@@ -27,7 +27,6 @@ export default function RecipeGrid({ recipes, onRecipeClick, loading }: any) {
       whileHover={{ y: -8 }}
       transition={{ delay: index * 0.1 }}
     >
-      {/* CHANGE THIS LINE: Pass the object and the click handler */}
       <RecipeCard 
         recipe={recipe} 
         onRecipeClick={onRecipeClick} 

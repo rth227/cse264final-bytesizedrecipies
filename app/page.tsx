@@ -17,7 +17,7 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      // Talking to your local backend on Port 8080
+      // talking to local backend on Port 8080
       const response = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(ingredients)}&addRecipeInformation=true&fillIngredients=true`);      if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
@@ -26,7 +26,7 @@ export default function Home() {
       console.log("Incoming Data:", data);
       console.log("Real recipes received:", data);
       
-      // This replaces the empty list with the results from Gwenn's API
+      // replaces the empty list with the results from Gwenn's API
       if (Array.isArray(data)) {
         setRecipes(data);
       } else {
@@ -55,10 +55,7 @@ export default function Home() {
           <IngredientInput onSearch={fetchRecipes} />
         </div>
 
-        {/* VITAL CHANGE: 
-          We pass 'recipes' (state) instead of 'mockRecipes' (static).
-          We also pass 'isLoading' so the grid can show a spinner.
-        */}
+        
         {isLoading ? (
           <div className="text-center py-20 font-serif italic text-[#4A9B94] animate-pulse text-2xl">
             Sifting through the pantry...

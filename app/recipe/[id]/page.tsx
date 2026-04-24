@@ -17,7 +17,7 @@ export default function RecipeDetailPage() {
   useEffect(() => {
     const getRecipeDetails = async () => {
       try {
-        // We call a new endpoint on your backend to get one specific recipe
+        // we call a new endpoint on backend to get one specific recipe
         const response = await fetch(`http://localhost:8080/api/recipes/${id}`);
         const data = await response.json();
         setRecipe(data);
@@ -36,7 +36,7 @@ export default function RecipeDetailPage() {
 
   return (
     <main className="min-h-screen bg-[#FDFBF7] pb-20">
-      {/* Header Image */}
+      {/* header image */}
       <div className="relative h-[40vh] w-full">
         <img src={recipe.image_url} className="h-full w-full object-cover" alt={recipe.title} />
         <Link href="/" className="absolute top-8 left-8 p-3 bg-white/90 backdrop-blur-md rounded-full shadow-lg">
@@ -59,7 +59,7 @@ export default function RecipeDetailPage() {
               {isSaved ? "Saved to Cookbook" : "Add to Cookbook"}
             </button>
         
-          {/* Stats Row */}
+          {/* stats row */}
           <div className="flex flex-wrap gap-8 mb-12 py-6 border-y border-slate-50">
             <div className="flex items-center gap-3">
               <Clock className="text-[#4A9B94]" />
@@ -77,7 +77,7 @@ export default function RecipeDetailPage() {
             </div>
           </div>
 
-          {/* Instructions */}
+          {/* instructions */}
           <div className="space-y-6">
             <h2 className="text-2xl font-serif italic text-slate-800">Instructions</h2>
             <div 
@@ -92,7 +92,6 @@ export default function RecipeDetailPage() {
   onClose={() => setIsSaveModalOpen(false)} 
   recipeId={id}
   recipeTitle={recipe.title}
-  // FIX: Use extendedIngredients and map it to a string
   ingredients={
     recipe.extendedIngredients 
       ? recipe.extendedIngredients.map((ing: any) => ing.original || ing.name).join(', ')

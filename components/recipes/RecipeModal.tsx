@@ -45,7 +45,6 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
   const title = recipe.title || recipe.recipe_name || "Untitled Recipe";
   const image = recipe.image || recipe.image_url || recipe.recipe_image;
   
-  // FIX: Prioritize the detailed ingredients from the fetch over the empty search result
   const ingredientsToDisplay = recipeDetails?.extendedIngredients || [];
 
   return (
@@ -64,17 +63,17 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
             exit={{ scale: 0.95, opacity: 0 }}
             className="relative bg-white w-full max-w-5xl h-[90vh] rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row"
           >
-            {/* Close Button */}
+            {/* close button */}
             <button onClick={onClose} className="absolute right-6 top-6 z-[110] p-3 bg-white/90 rounded-full shadow-lg hover:scale-110 transition-transform">
               <X className="h-6 w-6 text-slate-600" />
             </button>
 
-            {/* Left Side: Image */}
+            {/* left side: image */}
             <div className="relative w-full md:w-1/2 h-64 md:h-full overflow-hidden bg-slate-50">
               <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover" />
             </div>
 
-            {/* Right Side: Details */}
+            {/* right side: details */}
             <div className="w-full md:w-1/2 flex flex-col h-full bg-white">
               <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10">
                 <h2 className="text-4xl font-serif italic text-slate-800">{title}</h2>
@@ -106,7 +105,7 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
                 </div>
               </div>
 
-              {/* Action Footer */}
+              {/* action footer */}
               <div className="p-8 border-t border-slate-50 flex gap-4 bg-white">
                 <Link href={`/recipe/${recipe.id}`} className="flex-1">
                   <Button className="w-full bg-[#4A9B94] hover:bg-[#3d827c] text-white rounded-2xl h-14 font-bold shadow-md shadow-[#4A9B94]/20 transition-all">
@@ -117,7 +116,6 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
                 {showSaveButton && (
                   <Button 
                     onClick={() => setIsSaveModalOpen(true)}
-                    // Disable button until we have the data to save
                     disabled={loadingDetails || !recipeDetails}
                     variant="outline"
                     className="flex-1 border-slate-200 text-slate-600 rounded-2xl h-14 font-bold hover:bg-slate-50 transition-all disabled:opacity-50"
@@ -128,7 +126,7 @@ export default function RecipeModal({ isOpen, onClose, recipe, showSaveButton = 
               </div>
             </div>
 
-            {/* Save Modal */}
+            {/* save modal */}
             <SaveRecipeModal
               isOpen={isSaveModalOpen}
               onClose={() => setIsSaveModalOpen(false)}

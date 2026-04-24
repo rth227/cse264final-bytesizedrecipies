@@ -175,10 +175,10 @@ export default function SingleCookbookPage() {
   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4A9B94] mb-6">Pantry List</h4>
   <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
     {(() => {
-      // 1. Get the data from the recipe
+      // get the data from the recipe
       const rawData = selectedRecipe.ingredients;
       
-      // 2. Normalize it into a clean array of strings
+      // normalize it into a clean array of strings
       let ingredientsArray: string[] = [];
       
       if (typeof rawData === 'string') {
@@ -190,7 +190,7 @@ export default function SingleCookbookPage() {
         );
       }
 
-      // 3. Render the list
+      // render the list
       if (ingredientsArray.length === 0 || (ingredientsArray.length === 1 && ingredientsArray[0] === "")) {
         return <p className="text-slate-400 italic text-sm">No ingredients found in database.</p>;
       }

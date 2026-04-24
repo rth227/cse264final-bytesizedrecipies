@@ -373,12 +373,14 @@ app.post('/api/favorites', async (req, res) => {
     }
 
     /* get number of favorites by counting the count of favorites by user id, and parse it as an int */
-    const num = await query(`SELECT COUNT(*) FROM bytesized_favorites WHERE user_id = $1`, [body.user_id])
-    const count = parseInt(num.rows[0].count)
-    if (count > 4 ) {
-      return res.status(400).send('You can only have 5 favorites')
+    /* 5 limit for free users */
+    if (body.user_role === 'free'){
+      const num = await query(`SELECT COUNT(*) FROM bytesized_favorites WHERE user_id = $1`, [body.user_id])
+      const count = parseInt(num.rows[0].count)
+      if (count > 4 ) {
+        return res.status(400).send('You can only have 5 favorites')
+      }
     }
-
     /* add favorites */
     const qs = `INSERT INTO bytesized_favorites (user_id, recipe_id) VALUES ($1, $2)`
     query(qs, [body.user_id, body.recipe_id]).then((data => res.send(`${data.rowCount} favorite added`)))

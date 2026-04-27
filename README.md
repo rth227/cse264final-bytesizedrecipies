@@ -34,11 +34,17 @@ Internal API: Custom Next.js API routes to handle "favoriting" logic, user data,
 
 # Tech Stack
 Framework: Next.js
+
 Styling: Tailwind CSS
+
 Components: Shadcn/UI
+
 Animations: Framer Motion
+
 Database: PostgreSQL
+
 Icons: Lucide-React
+
 Auth: NextAuth.js
 
 # Installation and Setup
